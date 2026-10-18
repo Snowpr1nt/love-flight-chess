@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="粉色像素爱心" shape-rendering="crispEdges">
+  <path fill="#eed0df" d="M12 10h14v4h12v-4h14v4h6v8h4v18h-4v8h-8v6h-8v6H22v-6h-8v-6H6v-8H2V22h4v-8h6z"/>
+  <path fill="#665071" d="M12 8h14v4h12V8h14v4h6v8h4v18h-4v8h-8v6h-8v6H22v-6h-8v-6H6v-8H2V20h4v-8h6z"/>
+  <path fill="#eb90ad" d="M12 16h14v4h12v-4h14v4h4v18h-4v8h-8v6h-8v6h-8v-6h-8v-6h-8v-8H8V20h4z"/>
+  <path fill="#f6bed1" d="M12 20h10v4h8v4h4v8h-4v-4h-8v-4H12zm36 0h4v8h-4z"/>
+  <path fill="#fffaf6" d="M14 22h8v4h-8zm0 4h4v4h-4z"/>
+</svg>

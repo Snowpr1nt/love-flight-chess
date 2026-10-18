@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="戴粉色领结的原创像素小猫" shape-rendering="crispEdges">
+  <path fill="#edc6d5" d="M12 50h40v4H12zM16 54h32v4H16z"/>
+  <path fill="#665071" d="M8 22V10h4V6h8v4h4v4h16v-4h4V6h8v4h4v12h4v20h-4v8h-4v4H12v-4H8v-8H4V22z"/>
+  <path fill="#fffaf6" d="M12 24V14h4v-4h2v4h4v4h20v-4h4v-4h2v4h4v10h4v18h-4v6H12v-6H8V24z"/>
+  <path fill="#f4d6e1" d="M12 14h4v-4h2v4h4v4H12zm30 4 4-4v-4h2v4h4v4z"/>
+  <path fill="#8b73a0" d="M17 29h5v6h-5zm25 0h5v6h-5z"/>
+  <path fill="#f1a9bf" d="M12 38h8v4h-8zm32 0h8v4h-8z"/>
+  <path fill="#df88a8" d="M29 36h6v4h-6z"/>
+  <path fill="#665071" d="M25 41h4v2h-4zm10 0h4v2h-4zm-6 2h6v2h-6z"/>
+  <path fill="#665071" d="M4 34h8v2H4zm0 5h8v2H4zm48-5h8v2h-8zm0 5h8v2h-8z"/>
+  <path fill="#e98da9" d="M24 52h8v4h-8zm16 0h-8v4h8zm-12 4h8v4h-8z"/>
+  <path fill="#fff4f5" d="M30 54h4v4h-4z"/>
+</svg>

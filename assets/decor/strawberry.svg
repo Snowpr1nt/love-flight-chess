@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="粉红像素草莓" shape-rendering="crispEdges">
+  <path fill="#edc6d5" d="M14 52h36v4H14zm8 4h20v4H22z"/>
+  <path fill="#665071" d="M22 16h20v4h8v4h4v8h-4v12h-4v8h-6v4H24v-4h-6v-8h-4V32h-4v-8h4v-4h8z"/>
+  <path fill="#ea8eaa" d="M22 22h20v4h8v6h-4v12h-4v8H22v-8h-4V32h-4v-6h8z"/>
+  <path fill="#f3b6c8" d="M18 27h8v4h-4v10h-4z"/>
+  <path fill="#fff5d4" d="M25 30h3v5h-3zm12 0h3v5h-3zm-7 9h3v5h-3zm12 1h3v5h-3zm-22 0h3v5h-3z"/>
+  <path fill="#665071" d="M30 4h4v10h-4zM16 12h8v4h4v4h8v-4h4v-4h8v8h-4v4H20v-4h-4z"/>
+  <path fill="#91aa8d" d="M30 8h4v10h-4zM20 16h4v4h16v-4h4v4h-4v4H24v-4h-4z"/>
+  <path fill="#c2d4a6" d="M24 16h4v4h-4zm12 0h4v4h-4z"/>
+</svg>

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff5f8">
+  <meta name="description" content="异地情侣真心话大冒险飞行棋：双人轮流掷骰，完成 36 个互动任务，奔向心动终点。">
+  <title>恋爱飞行计划 · 异地情侣真心话大冒险飞行棋</title>
+  <link rel="icon" type="image/svg+xml" href="assets/icons/heart.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/redesign.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#main" aria-label="恋爱飞行计划，返回主内容">
+        <span class="brand-mark" aria-hidden="true">♡</span>
+        <span>恋爱飞行计划<span class="brand-en">LOVE FLIGHT CLUB</span></span>
+      </a>
+      <nav class="top-actions" aria-label="游戏菜单">
+        <button class="text-button" type="button" id="galleryButton"><img src="assets/icons/heart.svg" alt="">36 张心动卡</button>
+        <button class="icon-button" type="button" id="restartButton" aria-label="重新开始" title="重新开始"><img src="assets/icons/rotate-ccw.svg" alt=""></button>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="heroTitle">
+        <img class="hero-cat hero-cat-pink" src="assets/decor/pixel-cat.svg" alt="" aria-hidden="true">
+        <div class="hero-copy">
+          <span class="eyebrow">♡ 两个人的心动地图 ♡</span>
+          <h1 id="heroTitle">异地恋 <em>飞行棋</em></h1>
+          <p>绕过想念的每一格，下一站，见面。</p>
+        </div>
+        <img class="hero-cat hero-cat-blue" src="assets/decor/pixel-cat.svg" alt="" aria-hidden="true">
+      </section>
+
+      <section class="game-section" aria-label="情侣飞行棋游戏区">
+        <div class="section-heading"><h2>♡ 心动回旋棋盘 <span class="heading-heart" aria-hidden="true">✦</span></h2><p class="section-note">44 格回旋路线 · 36 次心动互动</p></div>
+
+        <div class="game-layout">
+          <div class="arena-status" aria-label="双人回合状态">
+            <div class="player-stack" id="playerStack" aria-label="玩家进度"></div>
+            <div class="turn-status">
+              <span class="round-badge">第 <b id="turnNumber">1</b> 回合</span>
+              <h3 id="turnHeading">准备起飞</h3>
+              <p id="turnHint">输入两个人的名字，开启这趟航程。</p>
+              <div class="turn-status-actions">
+                <button class="text-button" type="button" id="rulesButton"><img src="assets/icons/info.svg" alt="">玩法说明</button>
+                <button class="text-button settings-launch" type="button" id="settingsButton" aria-label="游戏设置"><span aria-hidden="true">⚙</span><span class="settings-label">游戏设置</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="board-wrap">
+            <div class="board-topline"><span><span class="status-dot"></span> 心动回旋地图</span><span>♡ 真心话 18　✦ 大冒险 18　↑ 奖励 4　↓ 回退 4</span></div>
+            <div class="board" id="board" aria-label="44 格回旋航线，粉蓝双方从同一起点沿路径飞向终点">
+              <div id="boardCells" class="board-cells"></div>
+              <div class="board-center" id="boardCenter">
+                <img class="board-decor decor-cat" src="assets/decor/pixel-cat.svg" alt="" aria-hidden="true">
+                <img class="board-decor decor-heart" src="assets/decor/heart.svg" alt="" aria-hidden="true">
+                <img class="board-decor decor-strawberry" src="assets/decor/strawberry.svg" alt="" aria-hidden="true">
+                <img class="board-decor decor-droplet" src="assets/decor/droplet.svg" alt="" aria-hidden="true">
+                <div class="center-content">
+                  <div class="dice-stage" aria-label="骰子结果">
+                    <span class="dice-stage-label">幸运骰子 ♡</span>
+                    <span id="diceFace" class="dice-face face-5" aria-hidden="true"><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i></span>
+                  </div>
+                  <div id="finishHeart" class="finish-heart" role="img" aria-label="中心爱心终点"><img src="assets/decor/finish-heart.svg" alt=""><strong>终点</strong><small>约好见面 ♡</small></div>
+                </div>
+              </div>
+            </div>
+            <div class="board-bottomline"><span>从同一个起点出发，沿回旋路线去见面 ♡</span><div id="sharedStart" class="start-pad shared-start" aria-label="两人共同起点"><span id="pinkStartToken" class="start-pad-token pink" aria-hidden="true">♀</span><span id="blueStartToken" class="start-pad-token blue" aria-hidden="true">♂</span><span class="shared-start-copy"><strong>共同起点</strong><small>START HERE ↗</small></span></div></div>
+            <div class="board-command" aria-label="掷骰与航程信息">
+              <div class="operation-bar">
+                <button class="dice-button" id="rollButton" type="button" disabled><span class="roll-icon" aria-hidden="true">⚄</span><span id="rollLabel">掷骰起飞</span><span aria-hidden="true">↗</span></button>
+                <button class="dice-button" id="finaleEntryButton" type="button" hidden><span aria-hidden="true">♡</span><span>查看最终约定</span></button>
+                <span class="center-footnote" id="centerFootnote">掷出 2 / 4 / 6 起飞</span>
+              </div>
+              <div class="center-message"><span class="center-eyebrow">LOVE FLIGHT CLUB · 44 STOPS</span><p class="center-quote">想念终会相见。</p><div class="flight-meta" aria-label="本轮航程信息"><div><span>所在位置</span><strong id="currentStop">共同起点</strong></div><div><span>下一位</span><strong id="nextPlayerName">等待登机</strong></div></div></div>
+            </div>
+          </div>
+          <details class="sidebar" aria-label="航程信息">
+            <summary><span>♡ 心动航行日志</span><small>展开查看任务记录与提示</small></summary>
+            <div class="sidebar-content">
+            <div class="flight-tip" id="flightTip"><span class="tip-icon" aria-hidden="true">✦</span><p>掷出 2 / 4 / 6，从共同起点飞入航线。</p></div>
+            <div class="log-card">
+              <div class="log-heading"><span>航行播报</span><span aria-hidden="true">↗</span></div>
+              <ol id="eventLog" class="event-log"><li>两位机长在共同起点集合，准备一起起飞。</li></ol>
+            </div>
+            <p class="privacy-note"><img src="assets/icons/heart.svg" alt=""> 进度只保存在这台设备。互动以双方舒服为准。</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <footer class="site-footer"><span>愿这趟航程，有很多想一起去的下一站。</span><span>MADE FOR TWO ♡</span></footer>
+    </main>
+  </div>
+
+  <dialog id="setupDialog" class="modal setup-modal" aria-labelledby="setupTitle">
+    <form id="setupForm" method="dialog" novalidate>
+      <span class="modal-kicker">BOARDING PASS · 双人登机牌</span>
+      <h2 id="setupTitle">给这趟航程<br><em>起个好名字。</em></h2>
+      <p class="modal-lead">给彼此取个昵称，一起从共同起点飞向心动终点。</p>
+      <div class="name-fields">
+        <label class="name-field pink"><span><i aria-hidden="true">♀</i> 粉色方 · 玩家 1</span><input id="playerOneName" name="playerOne" maxlength="12" autocomplete="off" placeholder="例如：小粉" value="小粉"></label>
+        <label class="name-field blue"><span><i aria-hidden="true">♂</i> 蓝色方 · 玩家 2</span><input id="playerTwoName" name="playerTwo" maxlength="12" autocomplete="off" placeholder="例如：小蓝" value="小蓝"></label>
+      </div>
+      <p class="setup-note">目前为双人同屏试玩。随机决定先手；互动任务以双方同意为前提。</p>
+      <button class="primary-button full-width" type="submit">开启心动航线 <span aria-hidden="true">↗</span></button>
+    </form>
+  </dialog>
+
+  <dialog id="cardDialog" class="modal card-modal" aria-labelledby="cardTitle">
+    <div class="card-top"><span id="cardCategory" class="category-pill">真心话</span><button class="close-button" id="cardCloseButton" type="button" aria-label="跳过并关闭挑战">×</button></div>
+    <span class="card-number" id="cardNumber">心动卡 01 / 36</span>
+    <div class="card-illustration" aria-hidden="true"><span>✦</span><b>♡</b><span>✦</span></div>
+    <h2 id="cardTitle">心动任务</h2>
+    <p id="cardText" class="card-text"></p>
+    <p id="cardExtra" class="card-extra"></p>
+    <p class="card-consent">以彼此舒服的方式完成；不想回答时，直接跳过就好。</p>
+    <div class="card-actions"><button class="subtle-button" id="swapButton" type="button">换一题</button><button class="subtle-button" id="skipButton" type="button">跳过</button><button class="primary-button" id="completeButton" type="button">已完成 <span aria-hidden="true">♡</span></button></div>
+  </dialog>
+
+  <dialog id="effectDialog" class="modal effect-modal" aria-labelledby="effectTitle">
+    <div class="effect-art" aria-hidden="true">✦ ♡ ✦</div>
+    <span class="modal-kicker" id="effectCategory">航线特别事件</span>
+    <h2 id="effectTitle">心动小惊喜</h2>
+    <p id="effectLead" class="modal-lead">选择一份心动约定，再继续飞行。</p>
+    <div id="effectOptions" class="effect-options" role="group" aria-label="选择本次奖惩内容"></div>
+    <p class="effect-note">先选一项并确认，棋子会继续移动 2 格；新的落点也会触发事件。</p>
+    <div class="effect-actions"><button id="effectSkipButton" class="subtle-button" type="button">跳过额外奖惩，照常移动</button><button id="effectConfirmButton" class="primary-button" type="button" disabled>确认选择并继续飞行 <span aria-hidden="true">↗</span></button></div>
+  </dialog>
+
+  <dialog id="rulesDialog" class="modal info-modal" aria-labelledby="rulesTitle">
+    <button class="close-button modal-close" type="button" data-close-dialog aria-label="关闭说明">×</button>
+    <span class="modal-kicker">FLIGHT MANUAL · 飞行手册</span>
+    <h2 id="rulesTitle">一起起飞的<br><em>小规则。</em></h2>
+    <ol class="rules-list">
+      <li><span>01</span><p><strong>从同一起点起飞</strong>两人从共同起点接入第 1 格。随机先手；掷出 2、4、6 就能进入航线。</p></li>
+      <li><span>02</span><p><strong>回旋 44 格</strong>沿双层回旋路径前进，途经 18 格真心话、18 格大冒险，以及各 4 格奖励与惩罚。</p></li>
+      <li><span>03</span><p><strong>奖励与惩罚</strong>停在特殊格时先三选一并确认，再前进或回退 2 格；新落点继续触发事件。</p></li>
+      <li><span>04</span><p><strong>精准抵达</strong>走完自己的一圈后进入中心终点。点数超出时从终点边缘回退，先精准抵达者获胜，并解锁最终约定。</p></li>
+    </ol>
+    <div class="rules-note">♡ 亲密互动以双方同意为前提。游戏只在当前设备保存进度，不会上传答案。</div>
+    <button class="primary-button full-width" type="button" data-close-dialog>明白啦，继续飞行</button>
+  </dialog>
+
+  <dialog id="settingsDialog" class="modal settings-modal" aria-labelledby="settingsTitle">
+    <button class="close-button modal-close" type="button" data-close-dialog aria-label="关闭设置">×</button>
+    <span class="modal-kicker">GAME SETTINGS · 游戏设置</span>
+    <h2 id="settingsTitle">把航程调成 <em>喜欢的样子。</em></h2>
+    <label class="setting-row" for="soundToggle"><span class="setting-icon" aria-hidden="true">♫</span><span class="setting-copy"><strong>开启音效</strong><small>换人提示音与掷骰反馈音</small></span><input id="soundToggle" type="checkbox" role="switch" aria-label="开启音效"><span class="setting-switch" aria-hidden="true"></span></label>
+    <p class="settings-note">默认静音；设置只保存在当前浏览器。系统开启“减少动态效果”时会简化动画。</p>
+    <button class="primary-button full-width" type="button" data-close-dialog>保存并返回棋盘</button>
+  </dialog>
+
+  <dialog id="galleryDialog" class="modal gallery-modal" aria-labelledby="galleryTitle">
+    <button class="close-button modal-close" type="button" data-close-dialog aria-label="关闭卡片图鉴">×</button>
+    <span class="modal-kicker">36 LITTLE STOPS · 卡片图鉴</span>
+    <h2 id="galleryTitle">沿途的 <em>36 个心动站。</em></h2>
+    <p class="gallery-intro">18 张真心话，18 张大冒险。点开任何一站，先看看沿途的风景。</p>
+    <div class="gallery-tabs" role="group" aria-label="筛选卡片"><button type="button" class="is-active" data-filter="all" aria-pressed="true">全部 36</button><button type="button" data-filter="truth" aria-pressed="false">真心话 18</button><button type="button" data-filter="dare" aria-pressed="false">大冒险 18</button></div>
+    <div id="galleryList" class="gallery-list"></div>
+  </dialog>
+
+  <dialog id="winDialog" class="modal win-modal" aria-labelledby="winTitle">
+    <div class="win-art" aria-hidden="true">✈ <span>♡</span> ✈</div>
+    <span class="modal-kicker">DESTINATION · 心动抵达</span>
+    <h2 id="winTitle">抵达心动终点！</h2>
+    <p id="winText"></p>
+    <div class="win-actions"><button class="subtle-button" id="playAgainButton" type="button">开启新航程</button><button class="primary-button" id="continueButton" type="button">解锁最终约定 <span aria-hidden="true">♡</span></button></div>
+  </dialog>
+
+  <dialog id="promiseDialog" class="modal promise-modal" aria-labelledby="promiseTitle">
+    <button class="close-button modal-close" type="button" data-close-dialog aria-label="关闭最终约定">×</button>
+    <div class="promise-art" aria-hidden="true"><img src="assets/decor/pixel-cat.svg" alt=""><span>♡</span><img src="assets/decor/strawberry.svg" alt=""></div>
+    <span class="modal-kicker">OUR NEXT DATE · 最终心动约定</span>
+    <h2 id="promiseTitle">把下一次见面，<em>写进计划里。</em></h2>
+    <p id="promiseText" class="modal-lead">写下一个愿望，或定下下一次见面的时间。</p>
+    <div id="promiseOptions" class="promise-ideas" role="group" aria-label="选择最终约定"></div>
+    <label class="promise-label" for="promiseInput">我们的心动约定</label>
+    <textarea id="promiseInput" rows="3" maxlength="120" placeholder="例如：下个月第二个周末，我们一起去看海。"></textarea>
+    <button id="promiseSaveButton" class="primary-button full-width" type="button">珍藏这份约定 <span aria-hidden="true">♡</span></button>
+  </dialog>
+
+  <div id="turnOverlay" class="turn-overlay" data-pilot="pink" hidden><div class="turn-toast" role="status"><img src="assets/decor/pixel-cat.svg" alt="" aria-hidden="true"><div class="turn-toast-copy"><span>YOUR TURN · 换人起飞</span><strong id="turnOverlayTitle">轮到粉色机长</strong><p id="turnOverlayHint">把好运气交给下一位机长。</p></div><button id="turnOverlayDismiss" type="button" aria-label="关闭换人提示">知道啦</button></div></div>
+
+  <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+  <script src="js/prompts.js"></script>
+  <script src="js/board-data.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>

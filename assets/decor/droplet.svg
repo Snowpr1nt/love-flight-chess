@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="淡紫色像素水滴" shape-rendering="crispEdges">
+  <path fill="#ede0ef" d="M24 53h16v4H24zM20 49h24v4H20z"/>
+  <path fill="#665071" d="M28 4h8v8h4v8h4v8h4v8h4v12h-4v6h-8v4H24v-4h-8v-6h-4V36h4v-8h4v-8h4v-8h4z"/>
+  <path fill="#bda8d7" d="M28 12h8v8h4v8h4v8h4v12h-4v6H20v-6h-4V36h4v-8h4v-8h4z"/>
+  <path fill="#dac8e9" d="M28 16h4v10h-4v8h-4v8h-4v-6h4v-8h4z"/>
+  <path fill="#fffaf6" d="M24 31h4v8h-4zm-4 8h4v4h-4z"/>
+</svg>
