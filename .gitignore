@@ -1,0 +1,20 @@
+# Local dependencies and generated service files
+node_modules/
+coverage/
+*.log
+
+# Local credentials and deployment configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+tcb_custom_login.json
+project.private.config.json
+
+# Local user data and temporary browser verification
+data/
+uploads/
+qa-preview.html
+.DS_Store
+Thumbs.db
