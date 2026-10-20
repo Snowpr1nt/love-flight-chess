@@ -103,7 +103,7 @@
     request('/visitor').then(async result=>{
       player=result.player;avatar=player.avatar;uploadedAvatar=avatar.startsWith('data:')?avatar:null;profileReady=true;$('onlineNickname').value=player.nickname;renderAvatarPicker();renderLobby();
       const previous=safeStore.get('love-flight-room');
-      if(previous&&!invite)try{const saved=await request('/rooms/'+previous+'?heartbeat=1');consume(saved.room);startPolling();}catch{/* A stale invitation must not prevent a new game. */}
+      if(previous)try{const saved=await request('/rooms/'+previous+'?heartbeat=1');if(!invite||saved.room.code===invite){consume(saved.room);startPolling();}}catch{/* A stale invitation must not prevent a new game. */}
     }).catch(error=>{if(error.code!=='SESSION_EXPIRED')notify(error.message,true);});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden&&room){clearTimeout(timer);poll();}});
     window.addEventListener('online',()=>{if(room){clearTimeout(timer);poll();}});
@@ -184,6 +184,7 @@
     if(room?.id===next.id&&next.revision<room.revision)return;
     const before=room;room=next;room.receivedAt=Date.now();connected=true;failures=0;
     safeStore.set('love-flight-room',room.id);
+    if(invite&&room.code===invite){const clean=new URL(location.href);clean.searchParams.delete('invite');history.replaceState(history.state,'',clean.href);}
     if(pendingCommand&&room.events?.some(e=>e.actionId===pendingCommand.actionId))pendingCommand=null;
     renderLobby();renderStrip();
     if(!before||before.id!==room.id||before.revision!==room.revision) {
