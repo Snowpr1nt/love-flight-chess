@@ -4,6 +4,7 @@
   const engine = window.CoupleFlightEngine;
   const prompts = window.CoupleFlightPrompts;
   const boardData = window.CoupleFlightBoardData;
+  const online = window.CoupleFlightOnline || null;
   if (!engine || !prompts || !boardData || prompts.length !== 36 || !boardData.validateBoardData().valid) {
     document.body.textContent = '游戏文件未完整加载，请检查 js 文件夹后刷新页面。';
     return;
@@ -48,6 +49,8 @@
   let floatingPiece = null;
   let audioContext = null;
   const tiles = new Map();
+  let onlineRevision = 0;
+  let onlineMatchId = null;
 
   function makeSpiralCells() {
     const cells = [];
@@ -98,6 +101,10 @@
   }
 
   function readSaved() {
+    if (online) {
+      try { soundOn = localStorage.getItem('love-flight-online-sound') === 'true'; } catch (_) {}
+      return;
+    }
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
       if (saved && engine.validateState(saved.state)) {
@@ -123,6 +130,10 @@
   }
 
   function save() {
+    if (online) {
+      try { localStorage.setItem('love-flight-online-sound', String(soundOn)); } catch (_) {}
+      return;
+    }
     if (!state) return;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ state, logs, seenCards, soundOn, promiseNote })); }
     catch (_) { /* Keep the current session playable without local storage. */ }
@@ -179,6 +190,7 @@
     const piece = document.createElement('span');
     piece.className = `${className} ${pilotColor(index)}`;
     piece.textContent = index === 0 ? '♀' : '♂';
+    if (online) online.paintAvatar(piece, online.avatarFor(index));
     piece.setAttribute('aria-hidden', 'true');
     if (className !== 'moving-piece') piece.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -206,6 +218,10 @@
   }
 
   function renderBoard() {
+    if (online) {
+      online.paintAvatar(dom.pinkStartToken, online.avatarFor(0));
+      online.paintAvatar(dom.blueStartToken, online.avatarFor(1));
+    }
     for (const { tile, tokenList } of tiles.values()) {
       tokenList.replaceChildren();
       tile.classList.remove('is-current');
@@ -236,6 +252,7 @@
       const avatar = document.createElement('span');
       avatar.className = 'player-avatar';
       avatar.textContent = index === 0 ? '♀' : '♂';
+      if (online) online.paintAvatar(avatar, online.avatarFor(index));
       avatar.setAttribute('aria-hidden', 'true');
       const info = document.createElement('div');
       info.className = 'player-info';
@@ -286,7 +303,7 @@
     dom.boardCenter.dataset.pilot = pilot;
     dom.turnNumber.textContent = state ? String(state.turnNumber) : '1';
     dom.nextPlayerName.textContent = state?.phase === 'finished' ? '航程已结束' : state ? playerName(1 - index) : '另一位机长';
-    const utilityLocked = busy || !dom.turnOverlay.hidden;
+    const utilityLocked = busy || !dom.turnOverlay.hidden || online?.pending;
     dom.rulesButton.disabled = utilityLocked;
     dom.settingsButton.disabled = utilityLocked;
     $('galleryButton').disabled = utilityLocked;
@@ -302,6 +319,11 @@
       dom.centerFootnote.textContent = '2 / 4 / 6 起飞 · 精准抵达终点';
       dom.rollLabel.textContent = '掷骰子';
       dom.rollButton.disabled = true;
+      if (online) {
+        dom.turnHeading.textContent = '两个人的登机时间';
+        dom.turnHint.textContent = '创建或加入房间，双方准备好就能一起起飞。';
+        lockOnlineControls();
+      }
       return;
     }
     const player = state.players[index];
@@ -329,6 +351,72 @@
     if (tip) tip.textContent = state.phase === 'finished'
       ? '先抵达爱心终点的一方，可以和对方写下一个双方愿意的最终约定。'
       : '奖励格前进 2 格，惩罚格回退 2 格；每次落地都会再次判定格子。';
+    lockOnlineControls();
+  }
+
+  function lockOnlineControls() {
+    if (!online) return;
+    const allowed = online.canAct(state) && !busy;
+    const mine = online.isMine(state);
+    dom.rollButton.disabled = !allowed || state?.phase !== 'await_roll' || !dom.turnOverlay.hidden;
+    if (state?.phase === 'await_roll' && !mine) dom.rollLabel.textContent = '等对方掷骰子';
+    if (state && !online.connected) dom.turnHint.textContent = '网络正在恢复，棋局已保存，请稍等一下。';
+    else if (state && online.room?.members.some(member => !member.online)) dom.turnHint.textContent = '对方暂时离线，等重新连接后再一起继续。';
+    if ($('onlineViewTask')) $('onlineViewTask').disabled = busy || online.pending;
+    for (const id of ['completeButton', 'skipButton', 'swapButton', 'effectSkipButton']) $(id).disabled = !allowed;
+    dom.effectConfirmButton.disabled = !allowed || !dom.effectOptions.querySelector('input:checked');
+    dom.effectOptions.querySelectorAll('input').forEach(input => { input.disabled = !allowed; });
+    dom.cardDialog.classList.toggle('online-readonly', !mine);
+    dom.cardExtra.textContent = mine ? '由你操作；完成或双方同意跳过后，另一端会同步换人。' : `轮到 ${playerName(state?.current || 0)} 完成这一站，你可以在这里一起看题。`;
+    dom.cardDialog.querySelector('.card-consent').textContent = mine ? '以彼此舒服的方式完成；不想回答时，直接跳过就好。' : '另一位机长正在操作。你可以关闭题卡，随时从“查看本轮任务”再打开。';
+    dom.promiseOptions.querySelectorAll('input').forEach(input => { input.disabled = !state || state.finaleChoice !== null || !mine; });
+    dom.promiseSaveButton.disabled = !state || !state.finaleChoice && (!allowed || !dom.promiseOptions.querySelector('input:checked'));
+  }
+
+  async function applyOnlineSnapshot(snapshot, event) {
+    const previousState = state;
+    const sameMatch = onlineMatchId === snapshot.matchId;
+    const hadPromise = dom.promiseDialog.open;
+    const animate = !!(event && sameMatch && event.previousRevision === onlineRevision && Date.now() - event.createdAt < 10000);
+    if (!sameMatch) {
+      stopPendingAnimation();
+      dom.finishHeart.classList.remove('is-winning');
+      try { promiseNote = localStorage.getItem('love-flight-online-note-' + snapshot.matchId) || ''; } catch (_) {}
+    }
+    closeGameDialogs();
+    [dom.rulesDialog, dom.settingsDialog, dom.galleryDialog].forEach(dialog => { if (dialog.open) dialog.close(); });
+    hideTurnOverlay();
+    busy = true;
+    renderTurn();
+    const token = epoch;
+    if (animate && state) {
+      const rolled = event.events.find(item => item.type === 'roll');
+      if (rolled && !await animateDice(rolled.die, token)) return;
+      for (const moved of event.events.filter(item => item.type === 'move')) {
+        if (!await animateMove(moved, token)) return;
+      }
+      if (event.events.some(item => item.type === 'move') && !reduceMotion) await wait(300);
+    }
+    if (token !== epoch) return;
+    state = snapshot.state;
+    logs = snapshot.logs || ['两位机长即将从共同起点出发。'];
+    onlineRevision = snapshot.revision;
+    onlineMatchId = snapshot.matchId;
+    if (state?.phase === 'finished' && previousState?.phase !== 'finished' && animate) {
+      renderBoard();
+      dom.finishHeart.classList.add('is-winning');
+      await wait(reduceMotion ? 100 : 800);
+    }
+    busy = false;
+    clearDiceAnimation();
+    render();
+    if (state?.phase === 'await_card') { closeGameDialogs(); showPending(); }
+    else if (state?.phase === 'finished') {
+      if (previousState?.phase !== 'finished') showWin();
+      else if (hadPromise) showPromise();
+    } else if (state && (event?.events.some(item => item.type === 'turn_changed' || item.type === 'game_started') || !sameMatch)) {
+      showTurnOverlay(state.current);
+    }
   }
 
   function render() {
@@ -597,6 +685,10 @@
 
   async function roll() {
     if (!state || state.phase !== 'await_roll' || busy || !dom.turnOverlay.hidden || document.querySelector('dialog[open]')) return;
+    if (online) {
+      await online.command('ROLL_REQUEST');
+      return;
+    }
     busy = true;
     renderTurn();
     ensureAudio();
@@ -607,7 +699,7 @@
   }
 
   function showPending() {
-    if (!state || state.phase !== 'await_card') return;
+    if (!state || state.phase !== 'await_card' || busy) return;
     const pending = state.pendingCard;
     if (pending.type === 'truth' || pending.type === 'dare') showCard();
     else showEffect();
@@ -623,6 +715,7 @@
     dom.cardText.textContent = prompt.text;
     dom.cardExtra.textContent = '完成后点击“已完成”；双方同意时也可以换题或跳过。';
     if (!dom.cardDialog.open) dom.cardDialog.showModal();
+    lockOnlineControls();
   }
 
   function fillOptions(container, items, name) {
@@ -657,13 +750,33 @@
       : '先选一项轻松挑战，再向后飞 2 格；新落点会继续触发。';
     fillOptions(dom.effectOptions, reward ? boardData.rewards : boardData.penalties, 'effectOption');
     dom.effectConfirmButton.disabled = true;
+    if (online) {
+      let previewClose = $('onlineEffectClose');
+      if (!previewClose) {
+        previewClose = document.createElement('button');
+        previewClose.id = 'onlineEffectClose';
+        previewClose.type = 'button';
+        previewClose.className = 'close-button modal-close';
+        previewClose.textContent = '×';
+        previewClose.setAttribute('aria-label', '关闭奖惩预览');
+        previewClose.addEventListener('click', () => dom.effectDialog.close());
+        dom.effectDialog.append(previewClose);
+      }
+      previewClose.hidden = online.isMine(state);
+    }
     if (!dom.effectDialog.open) dom.effectDialog.showModal();
+    lockOnlineControls();
   }
 
   async function resolveCard(skipped = false) {
     if (!state || state.phase !== 'await_card' || busy) return;
     const pending = state.pendingCard;
     if (pending.type !== 'truth' && pending.type !== 'dare') return;
+    if (online) {
+      if (!online.isMine(state)) { dom.cardDialog.close(); return; }
+      await online.command(skipped ? 'SKIP_TASK' : 'COMPLETE_TASK');
+      return;
+    }
     if (dom.cardDialog.open) dom.cardDialog.close();
     const prompt = prompts[pending.cardId - 1];
     addLog(`${playerName(state.current)} ${skipped ? '经双方同意跳过' : '已完成'}“${prompt.title}”。`);
@@ -675,8 +788,13 @@
     if (!state || state.phase !== 'await_card' || busy) return;
     const pending = state.pendingCard;
     if (pending.type !== 'reward' && pending.type !== 'penalty') return;
+    if (online && !online.isMine(state)) { dom.effectDialog.close(); return; }
     const selected = dom.effectOptions.querySelector('input[name="effectOption"]:checked');
     if (!skipped && !selected) return;
+    if (online) {
+      await online.command(skipped ? 'SKIP_TASK' : 'CHOOSE_EFFECT', selected ? { optionId: Number(selected.value) } : {});
+      return;
+    }
     if (dom.effectDialog.open) dom.effectDialog.close();
     const options = pending.type === 'reward' ? boardData.rewards : boardData.penalties;
     const optionId = selected ? Number(selected.value) : undefined;
@@ -690,6 +808,7 @@
     if (!state || state.phase !== 'await_card' || busy) return;
     const pending = state.pendingCard;
     if (pending.type !== 'truth' && pending.type !== 'dare') return;
+    if (online) { online.command('SWAP_TASK'); return; }
     const options = prompts.filter((prompt) => prompt.type === pending.type && prompt.id !== pending.cardId);
     const unused = options.filter((prompt) => !seenCards.includes(prompt.id));
     const pool = unused.length ? unused : options;
@@ -723,13 +842,26 @@
     dom.promiseSaveButton.disabled = !dom.promiseOptions.querySelector('input[name="finaleOption"]:checked');
     dom.promiseText.textContent = '选一个终点奖励，再把你们愿意兑现的时间或做法写下来。';
     if (!dom.promiseDialog.open) dom.promiseDialog.showModal();
+    if (online) {
+      dom.promiseText.textContent = state.finaleChoice ? '终点奖励已同步。下面的具体约定文字只保存在你的这台设备。' : '由获胜方选一个双方愿意的终点奖励，两端会一起看到结果。';
+      dom.promiseSaveButton.firstChild.textContent = state.finaleChoice ? '保存本机约定 ' : '确认终点奖励 ';
+      lockOnlineControls();
+    }
   }
 
-  function savePromise() {
+  async function savePromise() {
     if (!state || state.phase !== 'finished') return;
     const selected = dom.promiseOptions.querySelector('input[name="finaleOption"]:checked');
     if (!selected) return;
     const optionId = Number(selected.value);
+    if (online) {
+      if (!state.finaleChoice && !await online.command('CHOOSE_FINALE', { optionId })) return;
+      promiseNote = dom.promiseInput.value.trim().slice(0, 120);
+      try { localStorage.setItem('love-flight-online-note-' + online.room.matchId, promiseNote); } catch (_) {}
+      dom.promiseDialog.close();
+      online.notify('终点奖励已同步；具体文字约定已保存在本机。');
+      return;
+    }
     if (state.finaleChoice === null) state = engine.reduce(state, { type: 'CHOOSE_FINALE', optionId }).state;
     else if (state.finaleChoice !== optionId) return;
     promiseNote = dom.promiseInput.value.trim().slice(0, 120);
@@ -794,6 +926,12 @@
 
   function restart() {
     if (busy || !dom.turnOverlay.hidden) return;
+    if (online) {
+      if (state?.phase !== 'finished') { online.openLobby(); return; }
+      closeGameDialogs();
+      online.command('REMATCH').then(() => online.openLobby());
+      return;
+    }
     if (!state) { if (!dom.setupDialog.open) dom.setupDialog.showModal(); return; }
     if (!window.confirm('确定开启新航程吗？当前进度与约定会清空。')) return;
     const names = state.players.map((player) => player.name);
@@ -858,7 +996,10 @@
   readSaved();
   initEvents();
   render();
-  if (!state) dom.setupDialog.showModal();
+  if (online) online.mount({ apply: applyOnlineSnapshot, refresh: renderTurn, showTask: showPending,
+    reset() { stopPendingAnimation(); hideTurnOverlay(); closeGameDialogs(); state = null; onlineRevision = 0; onlineMatchId = null; render(); }
+  });
+  else if (!state) dom.setupDialog.showModal();
   else if (state.phase === 'await_card') showPending();
   else if (state.phase === 'finished' && state.finaleChoice === null) showWin();
 })();
