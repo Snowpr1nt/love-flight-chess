@@ -1,6 +1,10 @@
 (function () {
   'use strict';
-  const API='/api/flight';
+  const API=window.LOVE_FLIGHT_CONFIG?.apiBase||'/api/flight';
+  const crossOrigin=new URL(API,location.href).origin!==location.origin;
+  const tokenKey='love-flight-api-token:'+new URL(API,location.href).origin;
+  let sessionToken=null;
+  if(crossOrigin)try{sessionToken=localStorage.getItem(tokenKey);}catch{/* Memory-only sessions still work until reload. */}
   const $=id=>document.getElementById(id);
   const safeStore={get(k){try{return localStorage.getItem(k);}catch{return null;}},set(k,v){try{localStorage.setItem(k,v);}catch{}}};
   let hook=null,player=null,room=null,timer=null,polling=false,connected=false,sending=false,pendingCommand=null;
@@ -30,10 +34,11 @@
   async function request(path,body) {
     const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),12000);
     try {
-      const response=await fetch(API+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',signal:controller.signal,
-        headers:body===undefined?{}:{'content-type':'application/json','x-love-flight':'1'},body:body===undefined?undefined:JSON.stringify(body)});
+      const response=await fetch(API+path,{method:body===undefined?'GET':'POST',credentials:crossOrigin?'omit':'same-origin',cache:'no-store',signal:controller.signal,
+        headers:{...(body===undefined?{}:{'content-type':'application/json','x-love-flight':'1'}),...(crossOrigin&&sessionToken?{authorization:'Bearer '+sessionToken}:{})},body:body===undefined?undefined:JSON.stringify(body)});
       let data;try{data=await response.json();}catch{throw Object.assign(new Error('服务正在连接，请稍后重试。'),{code:'NETWORK'});}
-      if(!response.ok)throw Object.assign(new Error(data.error?.message||'操作未完成，请重试。'),{code:data.error?.code,status:response.status});
+      if(!response.ok){if(crossOrigin&&data.error?.code==='SESSION_EXPIRED'){sessionToken=null;try{localStorage.removeItem(tokenKey);}catch{}}throw Object.assign(new Error(data.error?.message||'操作未完成，请重试。'),{code:data.error?.code,status:response.status});}
+      if(crossOrigin&&data.sessionToken){sessionToken=data.sessionToken;safeStore.set(tokenKey,sessionToken);delete data.sessionToken;}
       return data;
     } catch(error) {
       if(error.name==='AbortError'||error instanceof TypeError)throw Object.assign(new Error('网络连接暂时中断，棋局已保存在服务器。'),{code:'NETWORK'});
@@ -91,7 +96,7 @@
     $('onlineViewTask').addEventListener('click',()=>hook.showTask());
     $('onlineRetry').addEventListener('click',()=>pendingCommand&&sendPending());
     $('onlineResume').addEventListener('click',()=>runLobby(async()=>{const id=safeStore.get('love-flight-room');if(id){const result=await request('/rooms/'+id+'?heartbeat=1');consume(result.room);startPolling();}}));
-    $('onlineCopyInvite').addEventListener('click',()=>copy(location.origin+'/play.html?invite='+room.code));
+    $('onlineCopyInvite').addEventListener('click',()=>{const link=new URL('play.html',location.href);link.searchParams.set('invite',room.code);copy(link.href);});
     $('onlineCopyCode').addEventListener('click',()=>copy(room.code));
     $('onlineCode').value=invite;
     renderAvatarPicker();renderLobby();lobby.showModal();

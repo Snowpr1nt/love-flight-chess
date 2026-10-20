@@ -1,0 +1,42 @@
+name: Publish doubao delivery page
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build static delivery and game
+        run: node scripts/build-pages.mjs
+      - name: Check shared rules and online service
+        run: node --test tests/engine.test.cjs tests/online.test.mjs
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload only generated public files
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages-dist
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5

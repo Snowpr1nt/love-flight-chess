@@ -2,6 +2,7 @@ import { engine, board } from './rules.mjs';
 
 const DAY = 86400000;
 const COOKIE = 'lf_demo_player';
+const PAGES_ORIGIN = 'https://snowpr1nt.github.io';
 const clone = (value) => structuredClone(value);
 export class GameError extends Error {
   constructor(code, message, status = 400) { super(message); this.code = code; this.status = status; }
@@ -73,7 +74,12 @@ export class D1Store {
 export class FlightService {
   constructor(store, {now=()=>Date.now(),rng=randomInt}={}) { this.store=store; this.now=now; this.rng=rng; }
   async getGuest(request) {
-    const token=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(COOKIE+'='))?.slice(COOKIE.length+1);
+    const authorization=request.headers.get('authorization');
+    const bearer=authorization?.match(/^Bearer ([a-f0-9-]{72})$/)?.[1];
+    if(authorization&&!bearer)return null;
+    const origin=request.headers.get('origin');
+    const crossOrigin=origin&&origin!==new URL(request.url).origin;
+    const token=bearer||(!crossOrigin?(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(COOKIE+'='))?.slice(COOKIE.length+1):null);
     if(!token || !/^[a-f0-9-]{72}$/.test(token)) return null;
     const guest=await this.store.guest(await hash(token));
     return guest && guest.expires_at > this.now() ? {...guest,...JSON.parse(guest.profile)} : null;
@@ -93,7 +99,7 @@ export class FlightService {
     const row={id:guest.id,token_hash:guest.token_hash,profile:JSON.stringify(data),expires_at:this.now()+7*DAY};
     await this.store.saveGuest(row);
     const secure=new URL(request.url).protocol==='https:' ? '; Secure' : '';
-    return {data:{player:{id:guest.id,...data},mode:'demo'},cookie:token ? `${COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${secure}` : null};
+    return {data:{player:{id:guest.id,...data},mode:'demo'},token,cookie:token ? `${COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${secure}` : null};
   }
   async requireRoom(id) {
     fail(typeof id==='string' && /^[a-f0-9-]{36}$/.test(id),'INVALID_ROOM','房间链接不正确。');
@@ -264,18 +270,33 @@ async function readBody(request) {
   try {const body=JSON.parse(new TextDecoder().decode(bytes));fail(body && typeof body==='object'&&!Array.isArray(body),'INVALID_BODY','请求格式错误。');return body;}catch(e){if(e instanceof GameError)throw e;throw new GameError('INVALID_JSON','请求内容不是有效 JSON。');}
 }
 export async function handleFlight(request,db,options) {
-  const headers={'content-type':'application/json; charset=utf-8','cache-control':'private, no-store','x-content-type-options':'nosniff'};
+  const headers={'content-type':'application/json; charset=utf-8','cache-control':'private, no-store','x-content-type-options':'nosniff','vary':'Origin'};
   const respond=(data,status=200)=>Response.json(data,{status,headers});
   try {
-    fail(db,'SERVICE_UNAVAILABLE','联机服务正在准备，请稍后重试。',503);
     const url=new URL(request.url);const path=url.pathname.replace(/^\/api\/flight/,'');
+    const origin=request.headers.get('origin');const crossOrigin=origin&&origin!==url.origin;
+    if(crossOrigin) {
+      fail(origin===PAGES_ORIGIN,'BAD_ORIGIN','请从已发布的游戏页面发起操作。',403);
+      headers['access-control-allow-origin']=origin;
+    }
+    if(request.method==='OPTIONS') {
+      fail(crossOrigin&&origin===PAGES_ORIGIN,'BAD_ORIGIN','预检来源不受支持。',403);
+      fail(['GET','POST'].includes(request.headers.get('access-control-request-method')),'INVALID_METHOD','请求方法不受支持。',405);
+      const requested=(request.headers.get('access-control-request-headers')||'').toLowerCase().split(',').map(h=>h.trim()).filter(Boolean);
+      fail(requested.every(h=>['authorization','content-type','x-love-flight'].includes(h)),'INVALID_HEADERS','请求头不受支持。',403);
+      return new Response(null,{status:204,headers:{...headers,'access-control-allow-methods':'GET, POST, OPTIONS','access-control-allow-headers':'Authorization, Content-Type, X-Love-Flight','access-control-max-age':'600'}});
+    }
+    fail(db,'SERVICE_UNAVAILABLE','联机服务正在准备，请稍后重试。',503);
     if(request.method==='GET'&&path==='/health')return respond({ok:true,protocolVersion:1,mode:'demo',transport:'https-poll',rulesVersion:engine.VERSION});
     const service=new FlightService(new D1Store(db),options);
     if(request.method==='POST') {
-      fail(request.headers.get('origin')===url.origin && request.headers.get('x-love-flight')==='1','BAD_ORIGIN','请从当前游戏页面发起操作。',403);
+      fail((origin===url.origin||origin===PAGES_ORIGIN) && request.headers.get('x-love-flight')==='1','BAD_ORIGIN','请从当前游戏页面发起操作。',403);
       const input=await readBody(request);
       if(path==='/visitor') {
-        const result=await service.enter(request,input);if(result.cookie)headers['set-cookie']=result.cookie;return respond(result.data);
+        const result=await service.enter(request,input);
+        if(crossOrigin&&result.token)result.data.sessionToken=result.token;
+        else if(!crossOrigin&&result.cookie)headers['set-cookie']=result.cookie;
+        return respond(result.data);
       }
       const guest=await service.requireGuest(request);
       if(path==='/rooms')return respond(await service.create(guest));

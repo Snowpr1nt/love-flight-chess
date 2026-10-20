@@ -4,13 +4,15 @@
 
 ## 体验
 
-演示站：https://love-flight-duo-demo.sunnylyric36.chatgpt.site
+展示交付入口：https://snowpr1nt.github.io/love-flight-chess/doubao/
+
+点击「开启双人航程」即可在 GitHub Pages 内游玩；`doubao` 是免费网址的路径，不是独立域名。原联机站继续可用：https://love-flight-duo-demo.sunnylyric36.chatgpt.site
 
 1. 两个人分别打开网址，填写昵称，选择像素猫头像或上传自己的头像。
 2. 一人创建房间，复制邀请链接或六位房间码发给另一人。
 3. 另一人申请加入；房主确认后，两人都点击准备，系统随机决定先手。
 4. 当前玩家掷骰并确认任务；另一方可以同步看到棋子、骰子和任务，等待自己的回合。
-5. 刷新页面或短暂断网后，可回到当前房间。请使用原浏览器，保留站点 Cookie。
+5. 刷新页面或短暂断网后，可回到当前房间。请使用原浏览器并保留站点数据。GitHub Pages 与原站的体验身份不自动迁移，但可以通过房间码互相加入。
 
 这是昵称头像体验身份，**尚未接入真实微信登录**。没有上传互动答案、录音或聊天功能。音效默认关闭，可在游戏设置开启。自定义文本的最终约定仅留在各自设备；最终奖励选项在房间内同步。
 
@@ -24,6 +26,8 @@
 - 头像显示在双方状态栏及棋子上；上传图片先在设备上裁剪压缩，不接收任意外部图片地址。
 
 ## 本地运行
+
+构建 GitHub Pages 展示及游戏静态文件：`node scripts/build-pages.mjs`。输出为 `pages-dist/doubao/`，通过 `.github/workflows/pages.yml` 自动发布；不上传整个仓库。具体说明见 [Pages 交付](docs/PAGES_DELIVERY.md)。
 
 需要 Node.js 24 和 pnpm 11。无依赖的本地联机预览：
 
@@ -59,6 +63,7 @@ pnpm build
 | `app/api/flight/[...path]/route.ts` | 生产 API 入口 |
 | `db/schema.ts`、`drizzle/` | 数据表及迁移 |
 | `scripts/prepare-game.mjs` | 生成网页静态资源及服务端规则模块 |
+| `pages/`、`scripts/build-pages.mjs` | 展示首页及 GitHub Pages 静态构建 |
 | `tests/engine.test.cjs`、`tests/online.test.mjs` | 规则与联机验收测试 |
 
 运行测试：
@@ -74,4 +79,4 @@ node --test tests/engine.test.cjs tests/online.test.mjs
 
 当前演示使用 D1 和 HTTPS 同步，替代原设计草案的 PostgreSQL / WebSocket 部署方案。后续可以沿用命令协议接入 WebSocket、真实微信授权和小程序前端；本版本不包含这些未实施能力。
 
-预览：[大厅](previews/online-lobby.png) · [联机棋盘](previews/online-desktop.png) · [手机](previews/online-mobile.png)。源码与历史记录：[GitHub](https://github.com/Snowpr1nt/love-flight-chess)。
+预览：[展示首页](previews/delivery-desktop.png) · [展示手机版](previews/delivery-mobile.png) · [大厅](previews/online-lobby.png) · [联机棋盘](previews/online-desktop.png) · [手机](previews/online-mobile.png)。源码与历史记录：[GitHub](https://github.com/Snowpr1nt/love-flight-chess)。

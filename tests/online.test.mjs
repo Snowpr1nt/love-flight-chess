@@ -13,7 +13,7 @@ function context(filename=':memory:') {
   const ctx={db,options,advance(ms=10000){time+=ms;},random(value){random=value;},
     async api(path,body,cookie,headers={}) {
       const request=new Request('https://game.test/api/flight'+path,{method:body===undefined?'GET':'POST',headers:{...(body===undefined?{}:{'content-type':'application/json','origin':'https://game.test','x-love-flight':'1'}),...(cookie?{cookie}:{}),...headers},body:body===undefined?undefined:JSON.stringify(body)});
-      const response=await handleFlight(request,db,options);return {status:response.status,data:await response.json(),cookie:response.headers.get('set-cookie')?.split(';')[0]};
+      const response=await handleFlight(request,db,options);return {status:response.status,data:await response.json(),cookie:response.headers.get('set-cookie')?.split(';')[0],cors:response.headers.get('access-control-allow-origin')};
     },
     async guest(name){const result=await ctx.api('/visitor',{nickname:name,avatar:'cat-pink'});assert.equal(result.status,200);return {cookie:result.cookie,id:result.data.player.id};},
     async command(guest,room,type,extra={}) {return ctx.api('/rooms/'+room.id+'/commands',{type,expectedRevision:room.revision,matchId:room.matchId,actionId:crypto.randomUUID(),...extra},guest.cookie);},
@@ -151,5 +151,49 @@ test('a full two-client game completes from shared start without fixtures or cli
     const aView=(await ctx.api('/rooms/'+room.id,undefined,a.cookie)).data.room;
     const bView=(await ctx.api('/rooms/'+room.id,undefined,b.cookie)).data.room;
     assert.deepEqual(aView.state,bView.state);
+  } finally {ctx.db.close();}
+});
+
+test('GitHub Pages visitors use bearer sessions without third-party cookies and can play together',async()=>{
+  const ctx=context();const origin='https://snowpr1nt.github.io';
+  try {
+    const a=await ctx.api('/visitor',{nickname:'粉方',avatar:'cat-pink'},null,{origin});
+    const b=await ctx.api('/visitor',{nickname:'蓝方',avatar:'cat-blue'},null,{origin});
+    assert.equal(a.status,200);assert.equal(a.cors,origin);assert.equal(a.cookie,undefined);assert.match(a.data.sessionToken,/^[a-f0-9-]{72}$/);
+    const ah={origin,authorization:'Bearer '+a.data.sessionToken},bh={origin,authorization:'Bearer '+b.data.sessionToken};
+    assert.equal((await ctx.api('/visitor',undefined,null,ah)).data.player.id,a.data.player.id);
+    assert.equal((await ctx.api('/visitor',{nickname:'更新名字',avatar:'cat-mint'},null,ah)).data.player.id,a.data.player.id);
+    let room=(await ctx.api('/rooms',{},null,ah)).data.room;
+    const pending=await ctx.api('/rooms/join',{code:room.code,actionId:crypto.randomUUID()},null,bh);assert.equal(pending.status,200);
+    room=(await ctx.api('/rooms/'+room.id+'?heartbeat=1',undefined,null,ah)).data.room;
+    const command=async(headers,type,extra={})=>{const response=await ctx.api('/rooms/'+room.id+'/commands',{type,expectedRevision:room.revision,matchId:room.matchId,actionId:crypto.randomUUID(),...extra},null,headers);assert.equal(response.status,200,JSON.stringify(response.data));room=response.data.room;};
+    await command(ah,'ACCEPT_JOIN',{targetId:b.data.player.id});await command(ah,'READY');await command(bh,'READY');
+    const current=room.state.current===0?ah:bh;await command(current,'ROLL_REQUEST');
+    assert.equal(room.state.lastRoll,2);ctx.advance();await command(current,'COMPLETE_TASK');
+    const otherView=await ctx.api('/rooms/'+room.id,undefined,null,current===ah?bh:ah);assert.deepEqual(otherView.data.room.state,room.state);
+    assert.equal(JSON.stringify(otherView.data).includes(a.data.sessionToken),false);
+    ctx.advance(7*86400000);assert.equal((await ctx.api('/visitor',undefined,null,ah)).status,401);
+  } finally {ctx.db.close();}
+});
+
+test('CORS preflight is restricted to the owned Pages origin, known methods and headers',async()=>{
+  const ctx=context();const origin='https://snowpr1nt.github.io';
+  try {
+    const request=(extra={})=>new Request('https://game.test/api/flight/visitor',{method:'OPTIONS',headers:{origin,'access-control-request-method':'POST','access-control-request-headers':'authorization,content-type,x-love-flight',...extra}});
+    const good=await handleFlight(request(),ctx.db,ctx.options);assert.equal(good.status,204);assert.equal(good.headers.get('access-control-allow-origin'),origin);assert.equal(good.headers.get('access-control-allow-credentials'),null);
+    for(const extra of [{origin:'https://evil.github.io'},{'access-control-request-headers':'x-other'},{'access-control-request-method':'DELETE'},{origin:'null'}]) {
+      const response=await handleFlight(request(extra),ctx.db,ctx.options);assert.ok(response.status>=400);
+    }
+    const evil=await ctx.api('/visitor',{nickname:'测试'},null,{origin:'https://snowpr1nt.github.io.evil.test'});assert.equal(evil.status,403);assert.equal(evil.cors,null);
+  } finally {ctx.db.close();}
+});
+
+test('cross-origin cookies do not authenticate, malformed bearer never falls back to a cookie',async()=>{
+  const ctx=context();try {
+    const a=await ctx.guest('桃桃');
+    assert.equal((await ctx.api('/visitor',undefined,a.cookie,{origin:'https://snowpr1nt.github.io'})).status,401);
+    assert.equal((await ctx.api('/visitor',undefined,a.cookie,{authorization:'Bearer invalid'})).status,401);
+    assert.equal((await ctx.api('/visitor',undefined,a.cookie,{origin:'https://evil.test'})).status,403);
+    const response=await ctx.api('/visitor',{nickname:'桃桃'},a.cookie);assert.equal('sessionToken' in response.data,false);
   } finally {ctx.db.close();}
 });
