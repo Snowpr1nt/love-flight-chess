@@ -2,7 +2,7 @@
 
 ## 2026-10-20 · V5.1 GitHub Pages / doubao 展示交付
 
-- 新增 `pages/` 展示首页，保留奶油粉蓝、像素装饰与游戏实景，提供联机及同屏入口、玩法说明和链接复制。
+- 新增 `delivery-page/` 展示首页，保留奶油粉蓝、像素装饰与游戏实景，提供联机及同屏入口、玩法说明和链接复制；避开框架保留的 `pages/` 路由目录。
 - 使用用户确认的免费 GitHub Pages 地址路径 `/love-flight-chess/doubao/`，没有注册或绑定独立域名。
 - 新增无依赖静态构建与 GitHub Actions 发布流程；仅上传生成的公开前端文件。
 - 后端精确允许自有 Pages 来源，补充 OPTIONS 与受限 CORS，Pages 采用 Bearer 体验身份避免跨站 Cookie；原站 Cookie 模式继续可用。

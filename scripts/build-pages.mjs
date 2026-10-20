@@ -8,7 +8,7 @@ const game=new URL('doubao/',output);
 await mkdir(game,{recursive:true});
 await import('./prepare-game.mjs');
 for(const folder of ['assets','css','js'])await cp(new URL(folder+'/',root),new URL(folder+'/',game),{recursive:true});
-for(const name of ['index.html','delivery.css','delivery.js'])await cp(new URL('pages/'+name,root),new URL(name,game));
+for(const name of ['index.html','delivery.css','delivery.js'])await cp(new URL('delivery-page/'+name,root),new URL(name,game));
 await mkdir(new URL('previews/',game),{recursive:true});
 await cp(new URL('previews/online-desktop.png',root),new URL('previews/online-desktop.png',game));
 const api='https://love-flight-duo-demo.sunnylyric36.chatgpt.site/api/flight';

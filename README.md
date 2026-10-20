@@ -63,7 +63,7 @@ pnpm build
 | `app/api/flight/[...path]/route.ts` | 生产 API 入口 |
 | `db/schema.ts`、`drizzle/` | 数据表及迁移 |
 | `scripts/prepare-game.mjs` | 生成网页静态资源及服务端规则模块 |
-| `pages/`、`scripts/build-pages.mjs` | 展示首页及 GitHub Pages 静态构建 |
+| `delivery-page/`、`scripts/build-pages.mjs` | 展示首页及 GitHub Pages 静态构建 |
 | `tests/engine.test.cjs`、`tests/online.test.mjs` | 规则与联机验收测试 |
 
 运行测试：
