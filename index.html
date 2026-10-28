@@ -60,16 +60,17 @@
                 <img class="board-decor decor-strawberry" src="assets/decor/strawberry.svg" alt="" aria-hidden="true">
                 <img class="board-decor decor-droplet" src="assets/decor/droplet.svg" alt="" aria-hidden="true">
                 <div class="center-content">
-                  <div class="dice-stage" aria-label="骰子结果">
-                    <span class="dice-stage-label">幸运骰子 ♡</span>
-                    <span id="diceFace" class="dice-face face-5" aria-hidden="true"><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i></span>
-                  </div>
                   <div id="finishHeart" class="finish-heart" role="img" aria-label="中心爱心终点"><img src="assets/decor/finish-heart.svg" alt=""><strong>终点</strong><small>约好见面 ♡</small></div>
                 </div>
               </div>
             </div>
             <div class="board-bottomline"><span>从同一个起点出发，沿回旋路线去见面 ♡</span><div id="sharedStart" class="start-pad shared-start" aria-label="两人共同起点"><span id="pinkStartToken" class="start-pad-token pink" aria-hidden="true">♀</span><span id="blueStartToken" class="start-pad-token blue" aria-hidden="true">♂</span><span class="shared-start-copy"><strong>共同起点</strong><small>START HERE ↗</small></span></div></div>
             <div class="board-command" aria-label="掷骰与航程信息">
+                  <button type="button" id="diceTrigger" class="dice-stage" aria-label="点击停止骰子，显示本次点数" disabled>
+                    <span class="dice-stage-label">幸运骰子 ♡</span>
+                    <span id="diceFace" class="dice-face face-5" aria-hidden="true"><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i><i class="dice-pip"></i></span>
+                    <span class="dice-stage-note">点击骰子或下方按钮，定格心动点数</span>
+                  </button>
               <div class="operation-bar">
                 <button class="dice-button" id="rollButton" type="button" disabled><span class="roll-icon" aria-hidden="true">⚄</span><span id="rollLabel">掷骰起飞</span><span aria-hidden="true">↗</span></button>
                 <button class="dice-button" id="finaleEntryButton" type="button" hidden><span aria-hidden="true">♡</span><span>查看最终约定</span></button>

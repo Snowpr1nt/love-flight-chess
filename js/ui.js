@@ -51,6 +51,21 @@
   const tiles = new Map();
   let onlineRevision = 0;
   let onlineMatchId = null;
+  let diceTurn = null;
+  let diceStopped = false;
+
+  function syncIdleDice() {
+    const turn = state ? `${onlineMatchId || 'local'}:${state.turnNumber}` : null;
+    if (turn !== diceTurn) { diceTurn = turn; diceStopped = false; }
+    dom.diceFace.classList.toggle('is-idle', !busy && !diceStopped && (!state || state.phase === 'await_roll'));
+    $('diceTrigger').disabled = !state || busy || state.phase !== 'await_roll' || !dom.turnOverlay.hidden || !!(online && !online.canAct(state));
+  }
+  window.setInterval(() => {
+    if (!reduceMotion && !document.hidden && dom.diceFace.classList.contains('is-idle')) {
+      const current = FACE_CLASSES.findIndex(name => dom.diceFace.classList.contains(name));
+      setDiceFace((current + 1) % 6 + 1);
+    }
+  }, 120);
 
   function makeSpiralCells() {
     const cells = [];
@@ -297,6 +312,7 @@
   }
 
   function renderTurn() {
+    syncIdleDice();
     const index = state?.current || 0;
     const pilot = pilotColor(index);
     document.body.dataset.pilot = pilot;
@@ -439,35 +455,14 @@
   }
 
   async function animateDice(finalValue, token) {
-    if (reduceMotion) {
-      setDiceFace(finalValue);
-      await wait(100);
-      return token === epoch;
-    }
-    dom.diceFace.classList.add('is-preparing');
-    await wait(100);
-    if (token !== epoch) return false;
-    dom.diceFace.classList.remove('is-preparing');
-    dom.diceFace.classList.add('is-rolling');
-    dom.rollButton.classList.add('is-rolling');
-    for (let index = 0; index < 12; index += 1) {
-      setDiceFace(randomDie());
-      await wait(80);
-      if (token !== epoch) return false;
-    }
-    dom.diceFace.classList.remove('is-rolling');
-    dom.diceFace.classList.add('is-decelerating');
-    for (const duration of [80, 100, 120]) {
-      setDiceFace(randomDie());
-      await wait(duration);
-      if (token !== epoch) return false;
-    }
-    dom.diceFace.classList.remove('is-decelerating');
-    dom.rollButton.classList.remove('is-rolling');
+    diceStopped = true;
+    dom.diceFace.classList.remove('is-idle');
+    clearDiceAnimation();
     setDiceFace(finalValue);
     dom.diceFace.classList.add('is-settled');
     playTone(410 + finalValue * 65, 0.17);
-    await wait(500);
+    // Preserve the server's 1.9s presentation lock while showing a stable result.
+    await wait(1900);
     if (token !== epoch) return false;
     dom.diceFace.classList.remove('is-settled');
     return true;
@@ -685,8 +680,12 @@
 
   async function roll() {
     if (!state || state.phase !== 'await_roll' || busy || !dom.turnOverlay.hidden || document.querySelector('dialog[open]')) return;
+    if (online && !online.canAct(state)) return;
+    diceStopped = true;
+    syncIdleDice();
     if (online) {
-      await online.command('ROLL_REQUEST');
+      const accepted = await online.command('ROLL_REQUEST');
+      if (!accepted && !online.pending) { diceStopped = false; syncIdleDice(); }
       return;
     }
     busy = true;
@@ -697,6 +696,8 @@
     if (!await animateDice(die, token)) return;
     await applyAction({ type: 'ROLL', die }, token);
   }
+
+  $('diceTrigger').addEventListener('click', roll);
 
   function showPending() {
     if (!state || state.phase !== 'await_card' || busy) return;

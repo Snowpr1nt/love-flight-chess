@@ -29,7 +29,7 @@
     { id: 24, type: 'dare', stage: '靠近', shortTitle: '云约会', title: '云约会排期', text: '各提一个不花钱也能完成的云约会项目，拼成一次双方都方便的约会。' },
     { id: 25, type: 'truth', stage: '心动', shortTitle: '见面首站', title: '见面后的第一站', text: '下次见面时，除去赶路，你最想和对方先做什么？' },
     { id: 26, type: 'dare', stage: '心动', shortTitle: '三词心动', title: '三词心动卡', text: '用三个词为对方做一张口头心动小卡，念给对方听或发成文字。' },
-    { id: 27, type: 'truth', stage: '心动', shortTitle: '共赏风景', title: '同一片风景', text: '如果能立刻和对方共享一处风景，你会选哪里？为什么？' },
+    { id: 27, type: 'truth', stage: '心动', shortTitle: '上次心动', title: '上一次心动', text: '你上一次对我心动是什么时候' },
     { id: 28, type: 'dare', stage: '心动', shortTitle: '悄悄话', title: '轻声悄悄话', text: '用你舒服的方式，轻声或打字对对方说一句只属于你们的悄悄话。' },
     { id: 29, type: 'truth', stage: '心动', shortTitle: '隔屏心动', title: '隔屏也心动', text: '对方在视频里哪种表情，或在语音里哪种语气，最让你心动？' },
     { id: 30, type: 'dare', stage: '心动', shortTitle: '同步十秒', title: '同步十秒', text: '两人在视频里同步摆动十秒；只有语音时可以一起数拍子或哼一段旋律。' },

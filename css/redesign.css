@@ -1031,3 +1031,20 @@ body[data-pilot="blue"] .operation-bar .dice-button { --pilot-accent:#82c3ff; --
   .finish-heart strong { font-size:12px; }
   .finish-heart small { font-size:5px; }
 }
+/* V5.2 · enlarged independent dice area, idle roll and 0.5s heartbeat. */
+.board-center .center-content { display:flex; align-items:center; justify-content:center; }
+.board-command .dice-stage { width:100%; min-height:180px; padding:16px 10px; gap:14px; cursor:pointer; font:inherit; color:inherit; overflow:hidden; border:2px dashed #b393bc; border-radius:18px; background:radial-gradient(circle,#f3d7e455 1px,transparent 2px) 0 0/14px 14px,#fffaf5; }
+.board-command .dice-stage:disabled { cursor:default; opacity:1; }
+.board-command .dice-stage:focus-visible { outline:3px solid #bc87b7; outline-offset:3px; }
+.board-command .dice-stage-label { font-size:12px; }
+.board-command .dice-stage-note { font-size:10px; }
+.board-command .dice-stage .dice-face { width:100px; height:100px; padding:17px; gap:5px; border-radius:22px; }
+.board-command .dice-stage .dice-pip { width:14px; height:14px; }
+.dice-stage .dice-face.is-idle { animation:diceIdle .5s linear infinite; }
+@keyframes diceIdle { 0% { transform:rotate(0deg) scale(1); } 28% { transform:rotate(100deg) scale(1.12); } 48% { transform:rotate(175deg) scale(1); } 68% { transform:rotate(245deg) scale(1.06); } 100% { transform:rotate(360deg) scale(1); } }
+@media(max-width:760px) {
+  .board-command .dice-stage { min-height:156px; padding:12px; gap:10px; }
+  .board-command .dice-stage .dice-face { width:80px; height:80px; padding:13px; gap:4px; border-radius:18px; }
+  .board-command .dice-stage .dice-pip { width:11px; height:11px; }
+}
+@media(prefers-reduced-motion:reduce) { .dice-stage .dice-face.is-idle { animation:none; } }
