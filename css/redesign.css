@@ -1070,6 +1070,14 @@ body[data-pilot="blue"] .operation-bar .dice-button { --pilot-accent:#82c3ff; --
 .board-command .dice-stage .dice-face.is-settled { animation:none; }
 @keyframes glassDiceSpin { from{transform:rotateX(-22deg) rotateY(28deg)} to{transform:rotateX(338deg) rotateY(748deg)} }
 @keyframes glassDicePulse { 0%,100%{transform:scale(.96)} 50%{transform:scale(1.08)} }
+.dice-orientation { position:absolute; inset:0; transform-style:preserve-3d; transform:var(--result-facing,rotateY(0deg)); }
+.dice-face.face-1 { --result-facing:rotateY(0deg); }
+.dice-face.face-2 { --result-facing:rotateX(-90deg); }
+.dice-face.face-3 { --result-facing:rotateY(-90deg); }
+.dice-face.face-4 { --result-facing:rotateY(90deg); }
+.dice-face.face-5 { --result-facing:rotateX(90deg); }
+.dice-face.face-6 { --result-facing:rotateY(180deg); }
+.dice-result { font-size:13px; font-weight:800; color:#ad2885; min-height:18px; }
 @media(max-width:760px) {
   .board-command .dice-stage { min-height:216px; gap:6px; }
   .dice-space { --cube-size:72px; width:145px; height:140px; }

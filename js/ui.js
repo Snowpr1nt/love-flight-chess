@@ -60,12 +60,6 @@
     dom.diceFace.classList.toggle('is-idle', !busy && !diceStopped && (!state || state.phase === 'await_roll'));
     $('diceTrigger').disabled = !state || busy || state.phase !== 'await_roll' || !dom.turnOverlay.hidden || !!(online && !online.canAct(state));
   }
-  window.setInterval(() => {
-    if (!reduceMotion && !document.hidden && dom.diceFace.classList.contains('is-idle')) {
-      const current = FACE_CLASSES.findIndex(name => dom.diceFace.classList.contains(name));
-      setDiceFace((current + 1) % 6 + 1);
-    }
-  }, 120);
 
   function makeSpiralCells() {
     const cells = [];
@@ -441,12 +435,16 @@
     renderLog();
     renderTurn();
     dom.soundToggle.checked = soundOn;
-    if (!busy) setDiceFace(state?.lastRoll || 5);
+    if (!busy) {
+      setDiceFace(state?.lastRoll || 1);
+      if (!state?.lastRoll) $('diceResult').textContent = '等待投掷';
+    }
   }
 
   function setDiceFace(value) {
     dom.diceFace.classList.remove(...FACE_CLASSES);
     dom.diceFace.classList.add(FACE_CLASSES[value - 1]);
+    $('diceResult').textContent = `本次投掷：${value} 点`;
   }
 
   function clearDiceAnimation() {
