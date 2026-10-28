@@ -1048,3 +1048,34 @@ body[data-pilot="blue"] .operation-bar .dice-button { --pilot-accent:#82c3ff; --
   .board-command .dice-stage .dice-pip { width:11px; height:11px; }
 }
 @media(prefers-reduced-motion:reduce) { .dice-stage .dice-face.is-idle { animation:none; } }
+/* V5.3 · magenta glass cube: six real CSS 3D faces and independent heartbeat. */
+.board-command .dice-stage { gap:8px; min-height:240px; background:radial-gradient(ellipse at 50% 55%,#fbe0f3 0,transparent 68%),#fffaf8; }
+.board-command .dice-stage-label { color:#ad2885; }
+.dice-space { --cube-size:86px; position:relative; display:grid; place-items:center; width:160px; height:160px; perspective:550px; isolation:isolate; }
+.dice-space::after { content:""; position:absolute; width:110px; height:35px; bottom:8px; border-radius:50%; background:radial-gradient(ellipse,#b6108950,transparent 70%); filter:blur(6px); z-index:-1; }
+.dice-pulse { display:block; width:var(--cube-size); height:var(--cube-size); transform-style:preserve-3d; }
+.board-command .dice-stage .dice-face { display:block; position:relative; width:var(--cube-size); height:var(--cube-size); padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; color:#70084d; transform-style:preserve-3d; transform:rotateX(-22deg) rotateY(28deg); }
+.cube-side { position:absolute; inset:0; display:grid; grid-template:repeat(3,1fr)/repeat(3,1fr); place-items:center; padding:15px; gap:4px; border:1.5px solid #ffb4ed; border-radius:17px; backface-visibility:hidden; background:linear-gradient(135deg,#fff7fdc9 0%,#fb91d9df 24%,#e839b5ed 67%,#b50c83f2 100%); box-shadow:inset 3px 3px 7px #fff9,inset -5px -6px 10px #a00b6b55,0 0 3px #e848b86b; }
+.cube-side::after { content:""; position:absolute; inset:5px; border-radius:12px; border-top:2px solid #ffeffbba; border-left:1px solid #ffe7f780; background:linear-gradient(125deg,transparent 24%,#fff6 25%,#fff2 34%,transparent 35%,transparent 67%,#ffc8ed44 68%,transparent 74%); pointer-events:none; }
+.cube-front { transform:translateZ(calc(var(--cube-size)/2)); }
+.cube-top { transform:rotateX(90deg) translateZ(calc(var(--cube-size)/2)); background:linear-gradient(135deg,#fff0fc,#f9a4df 50%,#e751b6); }
+.cube-right { transform:rotateY(90deg) translateZ(calc(var(--cube-size)/2)); }
+.cube-left { transform:rotateY(-90deg) translateZ(calc(var(--cube-size)/2)); background:linear-gradient(145deg,#f28cce,#c3178d); }
+.cube-back { transform:rotateY(180deg) translateZ(calc(var(--cube-size)/2)); }
+.cube-bottom { transform:rotateX(-90deg) translateZ(calc(var(--cube-size)/2)); }
+.board-command .dice-stage .dice-pip,.cube-dot { width:13px; height:13px; border-radius:50%; background:radial-gradient(circle at 65% 75%,#c637a0,#79064f 85%); box-shadow:inset 1px 2px 3px #510035aa,0 1px 1px #ffe0f4; position:relative; z-index:1; }
+.cube-dot { opacity:0; }.cube-dot.shown { opacity:1; }
+.board-command .dice-stage .dice-face.is-idle { animation:glassDiceSpin 3.2s linear infinite; }
+.dice-stage:has(.is-idle) .dice-pulse { animation:glassDicePulse .5s ease-in-out infinite; }
+.board-command .dice-stage .dice-face.is-settled { animation:none; }
+@keyframes glassDiceSpin { from{transform:rotateX(-22deg) rotateY(28deg)} to{transform:rotateX(338deg) rotateY(748deg)} }
+@keyframes glassDicePulse { 0%,100%{transform:scale(.96)} 50%{transform:scale(1.08)} }
+@media(max-width:760px) {
+  .board-command .dice-stage { min-height:216px; gap:6px; }
+  .dice-space { --cube-size:72px; width:145px; height:140px; }
+  .cube-side { padding:12px; gap:3px; border-radius:14px; }
+  .board-command .dice-stage .dice-pip,.cube-dot { width:11px; height:11px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .board-command .dice-stage .dice-face.is-idle,.dice-stage:has(.is-idle) .dice-pulse { animation:none; }
+}
