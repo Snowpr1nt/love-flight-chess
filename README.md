@@ -4,6 +4,8 @@
 
 ## 体验
 
+2026-11-04：原联机 API 实测被托管防护层返回 403，异地联机尚待迁移恢复。页面错误识别已修正，同屏试玩可用。原因见 [故障排查](docs/NETWORK_INCIDENT_2026-11-04.md)，账号开通和独立后端部署见 [迁移操作单](docs/CLOUDFLARE_MIGRATION.md)。
+
 展示交付入口：https://snowpr1nt.github.io/love-flight-chess/doubao/
 
 点击「开启双人航程」即可在 GitHub Pages 内游玩；`doubao` 是免费网址的路径，不是独立域名。原联机站继续可用：https://love-flight-duo-demo.sunnylyric36.chatgpt.site

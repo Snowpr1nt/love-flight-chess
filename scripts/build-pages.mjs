@@ -11,7 +11,9 @@ for(const folder of ['assets','css','js'])await cp(new URL(folder+'/',root),new 
 for(const name of ['index.html','delivery.css','delivery.js'])await cp(new URL('delivery-page/'+name,root),new URL(name,game));
 await mkdir(new URL('previews/',game),{recursive:true});
 await cp(new URL('previews/online-desktop.png',root),new URL('previews/online-desktop.png',game));
-const api='https://love-flight-duo-demo.sunnylyric36.chatgpt.site/api/flight';
+const api=(process.env.LOVE_FLIGHT_API_BASE||'https://love-flight-duo-demo.sunnylyric36.chatgpt.site/api/flight').replace(/\/$/,'');
+const apiUrl=new URL(api);
+if(apiUrl.protocol!=='https:'||apiUrl.username||apiUrl.password||apiUrl.search||apiUrl.hash||apiUrl.pathname!=='/api/flight')throw new Error('LOVE_FLIGHT_API_BASE must be an HTTPS URL ending in /api/flight, without credentials, query or fragment');
 const policy="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src "+new URL(api).origin+"; object-src 'none'; base-uri 'self'; form-action 'self'";
 let html=await readFile(new URL('public/play.html',root),'utf8');
 html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <meta http-equiv="Content-Security-Policy" content="'+policy+'">\n  <meta name="referrer" content="strict-origin-when-cross-origin">');

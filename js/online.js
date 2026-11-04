@@ -10,6 +10,7 @@
   let hook=null,player=null,room=null,timer=null,polling=false,connected=false,sending=false,pendingCommand=null;
   let failures=0,lastHeartbeat=0,avatar='cat-pink',uploadedAvatar=null,applying=Promise.resolve();
   let profileReady=false,toastTimer=null;
+  let lastConnectionError=null;
   const invite=(new URLSearchParams(location.search).get('invite')||'').toUpperCase().replace(/[^A-Z2-9]/g,'').slice(0,6);
   const online={
     get room(){return room;},get player(){return player;},get pending(){return sending||!!pendingCommand;},
@@ -32,18 +33,20 @@
     clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.hidden=true;},error?7000:3500);
   }
   async function request(path,body) {
-    const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),12000);
     try {
-      const response=await fetch(API+path,{method:body===undefined?'GET':'POST',credentials:crossOrigin?'omit':'same-origin',cache:'no-store',signal:controller.signal,
+      const data=await window.CoupleFlightNetwork.requestJSON(API+path,{method:body===undefined?'GET':'POST',credentials:crossOrigin?'omit':'same-origin',cache:'no-store',
         headers:{...(body===undefined?{}:{'content-type':'application/json','x-love-flight':'1'}),...(crossOrigin&&sessionToken?{authorization:'Bearer '+sessionToken}:{})},body:body===undefined?undefined:JSON.stringify(body)});
-      let data;try{data=await response.json();}catch{throw Object.assign(new Error('服务正在连接，请稍后重试。'),{code:'NETWORK'});}
-      if(!response.ok){if(crossOrigin&&data.error?.code==='SESSION_EXPIRED'){sessionToken=null;try{localStorage.removeItem(tokenKey);}catch{}}throw Object.assign(new Error(data.error?.message||'操作未完成，请重试。'),{code:data.error?.code,status:response.status});}
       if(crossOrigin&&data.sessionToken){sessionToken=data.sessionToken;safeStore.set(tokenKey,sessionToken);delete data.sessionToken;}
+      lastConnectionError=null;if($('onlineConnectHelp'))$('onlineConnectHelp').hidden=true;
       return data;
     } catch(error) {
-      if(error.name==='AbortError'||error instanceof TypeError)throw Object.assign(new Error('网络连接暂时中断，棋局已保存在服务器。'),{code:'NETWORK'});
+      if(crossOrigin&&error.code==='SESSION_EXPIRED'){sessionToken=null;try{localStorage.removeItem(tokenKey);}catch{}}
+      if(window.CoupleFlightNetwork.isConnectionError(error)) {
+        lastConnectionError={code:error.code,status:error.status||null,time:new Date().toISOString()};
+        if($('onlineConnectHelp')){$('onlineConnectHelp').hidden=false;$('onlineConnectHint').textContent=error.message;}
+      }
       throw error;
-    } finally {clearTimeout(timeout);}
+    }
   }
   function mount(callback) {
     hook=callback;
@@ -73,7 +76,12 @@
         <p id="onlineWaitingHint" class="online-waiting-hint" role="status"></p>
         <button type="button" id="onlineReady" class="primary-button full-width">我准备好了 ♡</button>
       </section>
-      <p id="onlineLobbyError" class="online-error" role="alert" hidden></p>`;
+      <p id="onlineLobbyError" class="online-error" role="alert" hidden></p>
+      <section id="onlineConnectHelp" class="online-connect-help" hidden aria-label="联机连接帮助">
+        <p id="onlineConnectHint" role="status"></p>
+        <p>未收到服务器确认前，不能保证刚才的操作已完成。请勿清除站点数据。</p>
+        <div><button type="button" id="onlineReconnect" class="subtle-button">重新连接</button><a class="subtle-button" href="local.html">同屏试玩</a><button type="button" id="onlineCopyDiagnostics" class="text-button">复制诊断信息</button></div>
+      </section>`;
     document.body.append(lobby);
     const strip=document.createElement('div');strip.className='online-room-strip';strip.innerHTML=`<div class="online-strip-main"><span id="onlineNetworkDot" class="online-network-dot"></span><strong id="onlineConnection">双人联机体验</strong><span id="onlineSeatLabel"></span></div><div class="online-strip-actions"><button id="onlineRetry" type="button" hidden>重试上次操作</button><button id="onlineViewTask" type="button" hidden>查看本轮任务</button><button id="onlineRoomMenu" type="button">我的航程</button></div>`;
     document.querySelector('.game-section').before(strip);
@@ -95,19 +103,42 @@
     lobby.addEventListener('cancel',event=>{if(!room?.state)event.preventDefault();});
     $('onlineViewTask').addEventListener('click',()=>hook.showTask());
     $('onlineRetry').addEventListener('click',()=>pendingCommand&&sendPending());
+    $('onlineReconnect').addEventListener('click',()=>{
+      // Retry an uncertain command with its original actionId, outside runLobby's lock.
+      if(pendingCommand&&room){sendPending();return;}
+      runLobby(async()=>{
+      const health=await request('/health');
+      if(health.ok!==true||health.protocolVersion!==1)throw new Error('服务返回了不兼容的数据，请联系维护者。');
+      await restorePlayer();
+      if(room)startPolling();
+      notify('连接检查完成。');
+      });
+    });
+    $('onlineCopyDiagnostics').addEventListener('click',()=>copy(JSON.stringify({
+      time:new Date().toISOString(),pageOrigin:location.origin,apiOrigin:new URL(API,location.href).origin,
+      browserOnline:navigator.onLine,roomKnown:!!room,error:lastConnectionError
+    },null,2)));
     $('onlineResume').addEventListener('click',()=>runLobby(async()=>{const id=safeStore.get('love-flight-room');if(id){const result=await request('/rooms/'+id+'?heartbeat=1');consume(result.room);startPolling();}}));
     $('onlineCopyInvite').addEventListener('click',()=>{const link=new URL('play.html',location.href);link.searchParams.set('invite',room.code);copy(link.href);});
     $('onlineCopyCode').addEventListener('click',()=>copy(room.code));
     $('onlineCode').value=invite;
     renderAvatarPicker();renderLobby();lobby.showModal();
-    request('/visitor').then(async result=>{
-      player=result.player;avatar=player.avatar;uploadedAvatar=avatar.startsWith('data:')?avatar:null;profileReady=true;$('onlineNickname').value=player.nickname;renderAvatarPicker();renderLobby();
-      const previous=safeStore.get('love-flight-room');
-      if(previous)try{const saved=await request('/rooms/'+previous+'?heartbeat=1');if(!invite||saved.room.code===invite){consume(saved.room);startPolling();}}catch{/* A stale invitation must not prevent a new game. */}
-    }).catch(error=>{if(error.code!=='SESSION_EXPIRED')notify(error.message,true);});
+    restorePlayer().catch(error=>{if(error.code!=='SESSION_EXPIRED'){setError(error.message);notify(error.message,true);}});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden&&room){clearTimeout(timer);poll();}});
     window.addEventListener('online',()=>{if(room){clearTimeout(timer);poll();}});
     window.addEventListener('offline',()=>{connected=false;renderStrip();hook.refresh();});
+  }
+  async function restorePlayer() {
+    let result;
+    try{result=await request('/visitor');}catch(error){
+      if(error.code==='SESSION_EXPIRED'){profileReady=false;renderLobby();return;}
+      throw error;
+    }
+    player=result.player;avatar=player.avatar;uploadedAvatar=avatar.startsWith('data:')?avatar:null;profileReady=true;$('onlineNickname').value=player.nickname;renderAvatarPicker();renderLobby();
+    const previous=safeStore.get('love-flight-room');
+    if(previous)try{const saved=await request('/rooms/'+previous+'?heartbeat=1');if(!invite||saved.room.code===invite){consume(saved.room);startPolling();}}catch(error){
+      if(!['ROOM_EXPIRED','NOT_A_MEMBER'].includes(error.code))throw error;
+    }
   }
   function renderAvatarPicker() {
     document.querySelectorAll('.online-avatar-choice').forEach(btn=>{const active=btn.dataset.avatar===avatar&&!uploadedAvatar;btn.classList.toggle('selected',active);btn.setAttribute('aria-pressed',String(active));});
@@ -139,7 +170,7 @@
     $('onlineHome').hidden=!profileReady||!!room;
     $('onlineWaiting').hidden=!profileReady||!room;
     $('onlineLobbyClose').hidden=!room?.state;
-    $('onlineCreate').disabled=sending;$('onlineJoin').disabled=sending;$('onlineProfileSubmit').disabled=sending;
+    $('onlineCreate').disabled=sending;$('onlineJoin').disabled=sending;$('onlineProfileSubmit').disabled=sending;$('onlineReconnect').disabled=sending;
     if(player){$('onlineSelfName').textContent=player.nickname;image($('onlineSelfAvatar'),player.avatar);}
     $('onlineResume').hidden=!safeStore.get('love-flight-room')||!!room;
     if(!room)return;

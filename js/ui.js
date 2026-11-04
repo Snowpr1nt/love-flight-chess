@@ -370,7 +370,7 @@
     const mine = online.isMine(state);
     dom.rollButton.disabled = !allowed || state?.phase !== 'await_roll' || !dom.turnOverlay.hidden;
     if (state?.phase === 'await_roll' && !mine) dom.rollLabel.textContent = '等对方掷骰子';
-    if (state && !online.connected) dom.turnHint.textContent = '网络正在恢复，棋局已保存，请稍等一下。';
+    if (state && !online.connected) dom.turnHint.textContent = '联机连接正在恢复，正在等待服务器确认，请稍等一下。';
     else if (state && online.room?.members.some(member => !member.online)) dom.turnHint.textContent = '对方暂时离线，等重新连接后再一起继续。';
     if ($('onlineViewTask')) $('onlineViewTask').disabled = busy || online.pending;
     for (const id of ['completeButton', 'skipButton', 'swapButton', 'effectSkipButton']) $(id).disabled = !allowed;

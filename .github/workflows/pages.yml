@@ -28,9 +28,11 @@ jobs:
         with:
           node-version: '24'
       - name: Build static delivery and game
+        env:
+          LOVE_FLIGHT_API_BASE: ${{ vars.LOVE_FLIGHT_API_BASE }}
         run: node scripts/build-pages.mjs
       - name: Check shared rules and online service
-        run: node --test tests/engine.test.cjs tests/online.test.mjs
+        run: node --test tests/engine.test.cjs tests/online.test.mjs tests/network.test.cjs tests/worker.test.mjs
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload only generated public files
